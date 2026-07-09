@@ -41,14 +41,6 @@ def _trip_to_dict(trip: Trip) -> dict:
     }
 
 
-def _parse_time(t: str | time) -> time:
-    """将字符串 'HH:MM' 或 time 对象统一转为 time 对象"""
-    if isinstance(t, time):
-        return t
-    parts = t.strip().split(":")
-    return time(hour=int(parts[0]), minute=int(parts[1]))
-
-
 # ===== 业务函数 =====
 
 def check_conflict(

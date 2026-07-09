@@ -38,9 +38,9 @@ from routers.auth import router as auth_router
 from routers.trips import router as trips_router
 from routers.ai import router as ai_router
 
-app.include_router(auth_router, prefix="/api/auth")
-app.include_router(trips_router)
-app.include_router(ai_router)
+app.include_router(auth_router, prefix="/api/auth", tags=["鉴权"])
+app.include_router(trips_router, tags=["行程"])
+app.include_router(ai_router, tags=["AI"])
 
 
 # ─── 健康检查 ────────────────────────────────────────────

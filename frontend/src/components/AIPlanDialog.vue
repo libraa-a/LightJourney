@@ -446,7 +446,7 @@ async function handleSave() {
 
   saving.value = true
   let saved = 0
-  const failed = planItems.value.filter((i) => !i._deleted && i._conflictType === 'external').length
+  let failed = planItems.value.filter((i) => !i._deleted && i._conflictType === 'external').length
 
   for (const item of toSave) {
     try {

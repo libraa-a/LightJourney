@@ -29,3 +29,8 @@ class Settings(BaseSettings):
 
 # 全局单例
 settings = Settings()
+
+# ── 大写常量（兼容 P2 代码的 import 风格）──
+DEEPSEEK_API_KEY = settings.deepseek_api_key
+DEEPSEEK_BASE_URL = settings.deepseek_base_url
+DEEPSEEK_MODEL = "deepseek-chat"
