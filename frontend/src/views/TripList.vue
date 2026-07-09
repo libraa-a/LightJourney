@@ -61,6 +61,13 @@
       v-model:visible="showPlanDialog"
       @saved="handleSaved"
     />
+
+    <!-- AI 文案弹窗 -->
+    <!-- TODO: P4 实现 — 从 TripCard 的 @copywriting 事件触发此弹窗 -->
+    <AICopywritingDialog
+      v-model:visible="showCopywritingDialog"
+      :trip="selectedTrip"
+    />
   </div>
 </template>
 
@@ -71,6 +78,7 @@ import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 import TripFormDialog from '../components/TripFormDialog.vue'
 import AIPlanDialog from '../components/AIPlanDialog.vue'
+import AICopywritingDialog from '../components/AICopywritingDialog.vue'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -80,6 +88,8 @@ const filterDateRange = ref([])
 const totalBudget = ref(0)
 const showFormDialog = ref(false)
 const showPlanDialog = ref(false)
+const showCopywritingDialog = ref(false)
+const selectedTrip = ref(null)
 
 const handleLogout = () => {
   userStore.clearAuth()
