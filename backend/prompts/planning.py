@@ -41,13 +41,14 @@ SKILL1_SYSTEM_PROMPT = """你是一位经验丰富的专业旅行规划师，擅
 请严格按照以上格式输出，确保 JSON 可被直接解析。"""
 
 
-def build_planning_user_message(city: str, days: int, preferences: list[str], budget: float | None = None,
+def build_planning_user_message(city: str, start_date: str, days: int, preferences: list[str], budget: float | None = None,
                                  existing_dates: list[str] | None = None) -> str:
     """
     构建 Skill1 行程规划的用户消息。
 
     Args:
         city: 目的地城市
+        start_date: 行程开始日期 YYYY-MM-DD
         days: 出行天数
         preferences: 偏好列表，如 ["美食", "自然风光", "人文历史"]
         budget: 总预算上限（可选）
@@ -58,7 +59,12 @@ def build_planning_user_message(city: str, days: int, preferences: list[str], bu
     """
     pref_text = "、".join(preferences) if preferences else "综合体验"
 
-    budget_text = f"，总预算控制在 {budget} 元以内" if budget else "，预算不限"
+    if budget:
+        lower = int(budget * 0.8)
+        upper = int(budget * 0.9)
+        budget_text = f"，总预算 {budget} 元，实际分配控制在 {lower}~{upper} 元"
+    else:
+        budget_text = "，预算不限"
 
     existing_text = ""
     if existing_dates:
@@ -69,6 +75,6 @@ def build_planning_user_message(city: str, days: int, preferences: list[str], bu
         )
 
     return (
-        f"请为我规划一趟 {city} 的 {days} 天旅行行程。\n"
+        f"请为我规划一趟 {city} 的 {days} 天旅行行程，从 {start_date} 开始。\n"
         f"偏好方向：{pref_text}{budget_text}。{existing_text}"
     )

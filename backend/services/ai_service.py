@@ -7,7 +7,7 @@ import time
 
 import httpx
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ AI_TIMEOUT_SECONDS = 30
 AI_MAX_RETRIES = 1
 
 # Chat Completions 端点
-CHAT_URL = f"{DEEPSEEK_BASE_URL.rstrip('/')}/v1/chat/completions"
+CHAT_URL = f"{settings.deepseek_base_url.rstrip('/')}/chat/completions"
 
 
 def _make_request(messages: list[dict], temperature: float = 0.7, max_tokens: int = 4096) -> str:
@@ -25,11 +25,11 @@ def _make_request(messages: list[dict], temperature: float = 0.7, max_tokens: in
 
     内部网关使用自签名证书，跳过 SSL 验证。
     """
-    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY == "sk-your-api-key-here":
+    if not settings.deepseek_api_key or settings.deepseek_api_key == "sk-your-api-key-here":
         raise ValueError("DeepSeek API Key 未配置，请检查 .env 文件中的 DEEPSEEK_API_KEY")
 
     payload = {
-        "model": DEEPSEEK_MODEL,
+        "model": settings.deepseek_model,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -43,13 +43,20 @@ def _make_request(messages: list[dict], temperature: float = 0.7, max_tokens: in
                     CHAT_URL,
                     json=payload,
                     headers={
-                        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                        "Authorization": f"Bearer {settings.deepseek_api_key}",
                         "Content-Type": "application/json",
                     },
                 )
 
             if resp.status_code != 200:
-                error_detail = resp.json().get("error", {}).get("message", resp.text[:200])
+                try:
+                    err_data = resp.json()
+                    if isinstance(err_data, dict):
+                        error_detail = err_data.get("error", {}).get("message", "")
+                    else:
+                        error_detail = str(err_data)
+                except Exception:
+                    error_detail = resp.text[:200]
                 raise RuntimeError(f"API 返回错误 ({resp.status_code}): {error_detail}")
 
             data = resp.json()

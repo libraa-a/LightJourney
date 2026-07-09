@@ -165,6 +165,7 @@ const groupedTrips = computed(() => {
   // 按日期排序，组内按时段排序
   return Object.keys(groups)
     .sort()
+    .reverse()
     .map((date) => ({
       date,
       weekday: getWeekday(date),

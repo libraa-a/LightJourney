@@ -51,7 +51,7 @@ async def get_trips(
     city: str | None = Query(None, description="筛选城市"),
     date_from: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
     date_to: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -61,7 +61,7 @@ async def get_trips(
     """
     result = trip_service.get_trips(
         db=db,
-        user_id=user_id,
+        user_id=user["user_id"],
         city=city,
         date_from=date_from,
         date_to=date_to,
@@ -72,7 +72,7 @@ async def get_trips(
 @router.post("")
 async def create_trip(
     body: TripCreate,
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -80,7 +80,7 @@ async def create_trip(
 
     会自动检测时段冲突，若冲突返回 409。
     """
-    result = trip_service.create_trip(db=db, user_id=user_id, data=body.model_dump())
+    result = trip_service.create_trip(db=db, user_id=user["user_id"], data=body.model_dump())
 
     # 检查冲突标记
     if result.get("_conflict"):
@@ -93,7 +93,7 @@ async def create_trip(
 async def update_trip(
     trip_id: int,
     body: TripUpdate,
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -107,7 +107,7 @@ async def update_trip(
         return _error(400, "没有需要更新的字段")
 
     try:
-        result = trip_service.update_trip(db=db, trip_id=trip_id, user_id=user_id, data=update_data)
+        result = trip_service.update_trip(db=db, trip_id=trip_id, user_id=user["user_id"], data=update_data)
     except ValueError:
         raise HTTPException(status_code=404, detail="行程不存在")
     except PermissionError:
@@ -122,7 +122,7 @@ async def update_trip(
 @router.delete("/{trip_id}")
 async def delete_trip(
     trip_id: int,
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -131,7 +131,7 @@ async def delete_trip(
     会校验数据归属，不能删除他人的行程。
     """
     try:
-        trip_service.delete_trip(db=db, trip_id=trip_id, user_id=user_id)
+        trip_service.delete_trip(db=db, trip_id=trip_id, user_id=user["user_id"])
     except ValueError:
         raise HTTPException(status_code=404, detail="行程不存在")
     except PermissionError:

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # ── DeepSeek API（P2 使用）──
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com/v1"
+    deepseek_model: str = "deepseek-chat"
 
     model_config = SettingsConfigDict(
         env_file=".env",

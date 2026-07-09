@@ -187,7 +187,7 @@ def get_trips(
     if date_to:
         query = query.filter(Trip.date <= date_to)
 
-    trips = query.order_by(Trip.date.asc(), Trip.start_time.asc()).all()
+    trips = query.order_by(Trip.date.desc(), Trip.start_time.asc()).all()
 
     trip_list = [_trip_to_dict(t) for t in trips]
 

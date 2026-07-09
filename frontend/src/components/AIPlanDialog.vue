@@ -20,8 +20,25 @@
         <el-form-item label="目的地" prop="city">
           <el-input v-model="params.city" placeholder="如：成都" />
         </el-form-item>
-        <el-form-item label="天数" prop="days">
-          <el-input-number v-model="params.days" :min="1" :max="30" />
+        <el-form-item label="开始日期" prop="start_date">
+          <el-date-picker
+            v-model="params.start_date"
+            type="date"
+            placeholder="选择开始日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="结束日期" prop="end_date">
+          <el-date-picker
+            v-model="params.end_date"
+            type="date"
+            placeholder="选择结束日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="偏好" prop="preferences">
           <el-checkbox-group v-model="params.preferences">
@@ -256,13 +273,28 @@ const paramFormRef = ref(null)
 
 const params = reactive({
   city: '',
-  days: 3,
+  start_date: '',
+  end_date: '',
   preferences: [],
   budget: null,
 })
 
+// 日期校验
+const validateDateRange = (_rule, _value, callback) => {
+  if (params.start_date && params.end_date && params.end_date < params.start_date) {
+    callback(new Error('结束日期不能早于开始日期'))
+  } else {
+    callback()
+  }
+}
+
 const paramRules = {
   city: [{ required: true, message: '请输入目的地', trigger: 'blur' }],
+  start_date: [{ required: true, message: '请选择开始日期', trigger: 'change' }],
+  end_date: [
+    { required: true, message: '请选择结束日期', trigger: 'change' },
+    { validator: validateDateRange, trigger: 'change' },
+  ],
   preferences: [
     { type: 'array', min: 1, message: '请至少选择一个偏好', trigger: 'change' },
   ],
@@ -349,7 +381,8 @@ async function handleGenerate() {
   try {
     const payload = {
       city: params.city,
-      days: params.days,
+      start_date: params.start_date,
+      end_date: params.end_date,
       preferences: params.preferences,
     }
     if (params.budget && params.budget > 0) {

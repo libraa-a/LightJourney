@@ -21,7 +21,8 @@ router = APIRouter(prefix="/api/ai", tags=["AI"])
 class PlanRequest(BaseModel):
     """Skill1 行程规划请求"""
     city: str = Field(..., min_length=1, max_length=50, description="目的地城市")
-    days: int = Field(..., ge=1, le=30, description="出行天数")
+    start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="开始日期 YYYY-MM-DD")
+    end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="结束日期 YYYY-MM-DD")
     preferences: list[str] = Field(default=[], description="偏好标签，如 美食、自然风光、人文历史")
     budget: float | None = Field(None, ge=0, description="总预算上限（可选）")
 
@@ -43,7 +44,7 @@ def _ok(data=None, message: str = "success", code: int = 200) -> dict:
 @router.post("/plan")
 async def plan_trip(
     body: PlanRequest,
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -59,13 +60,22 @@ async def plan_trip(
     保存由前端逐条调用 POST /api/trips 完成。
     """
     # 1. 查询已有行程的日期
-    existing = trip_service.get_trips(db=db, user_id=user_id, city=body.city)
+    existing = trip_service.get_trips(db=db, user_id=user["user_id"], city=body.city)
     existing_dates = list(existing.get("daily_budgets", {}).keys()) if existing else []
 
-    # 2. 构建 Prompt 并调用 DeepSeek
+    # 2. 计算天数 + 构建 Prompt 并调用 DeepSeek
+    from datetime import date
+    d1 = date.fromisoformat(body.start_date)
+    d2 = date.fromisoformat(body.end_date)
+    trip_days = (d2 - d1).days + 1
+
+    if trip_days < 1 or trip_days > 30:
+        raise HTTPException(status_code=400, detail="出行天数须在 1-30 之间")
+
     user_message = build_planning_user_message(
         city=body.city,
-        days=body.days,
+        start_date=body.start_date,
+        days=trip_days,
         preferences=body.preferences,
         budget=body.budget,
         existing_dates=existing_dates,
@@ -93,7 +103,7 @@ async def plan_trip(
         try:
             item_conflicts = trip_service.check_conflict(
                 db=db,
-                user_id=user_id,
+                user_id=user["user_id"],
                 trip_date=item.get("date", ""),
                 start_time=item.get("start_time", ""),
                 end_time=item.get("end_time", ""),
@@ -125,7 +135,7 @@ async def plan_trip(
 @router.post("/copywriting")
 async def generate_copywriting(
     body: CopywritingRequest,
-    user_id: int = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
     db = Depends(get_db),
 ):
     """
@@ -143,14 +153,14 @@ async def generate_copywriting(
     target_trip = trip_service.get_trip_by_id(db, trip_id=body.trip_id)
     if not target_trip:
         raise HTTPException(status_code=404, detail="行程不存在")
-    if target_trip.user_id != user_id:
+    if target_trip.user_id != user["user_id"]:
         raise HTTPException(status_code=403, detail="无权操作该行程")
 
     # 2. 查询当天同城所有行程
     trip_date = target_trip.date.isoformat() if hasattr(target_trip.date, 'isoformat') else str(target_trip.date)
     all_trips_result = trip_service.get_trips(
         db=db,
-        user_id=user_id,
+        user_id=user["user_id"],
         city=target_trip.city,
         date_from=trip_date,
         date_to=trip_date,
